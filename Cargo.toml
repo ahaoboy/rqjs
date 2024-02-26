@@ -1,0 +1,8 @@
+[package]
+name = "rqjs"
+version = "0.1.0"
+edition = "2021"
+description = "rqjs"
+license = "MIT"
+
+[dependencies]
