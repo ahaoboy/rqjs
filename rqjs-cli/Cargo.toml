@@ -1,0 +1,17 @@
+[package]
+name = "rqjs-cli"
+version = "0.1.3"
+edition = "2021"
+license = "MIT"
+description = "rqjs-cli"
+authors = ["ahaoboy"]
+repository = "https://github.com/ahaoboy/rqjs"
+homepage = "https://github.com/ahaoboy/rqjs"
+
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+rquickjs = { version = "0.6.2", features = ["full-async", "bindgen"] }
+ctrlc = "3.4.4"
+tokio = { version = "1", features = ["full"] }
+rqjs-ext = { version = "0.1.3", path = "../rqjs-ext" }
