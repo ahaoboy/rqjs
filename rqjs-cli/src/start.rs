@@ -18,7 +18,6 @@ use rquickjs::{
     AsyncContext, AsyncRuntime, Ctx, Function, Module, Object, Result, Value,
 };
 
-
 use rqjs_ext::modules;
 
 pub async fn start(args: Args) {
@@ -54,17 +53,18 @@ pub async fn start(args: Args) {
     let rt = AsyncRuntime::new().unwrap();
     rt.set_loader(resolver, loader).await;
     let ctx = AsyncContext::full(&rt).await.unwrap();
-
+    ctx.with(|ctx| {
+        for i in init_global {
+            i(&ctx).unwrap();
+        }
+    })
+    .await;
     if let Some(path) = file {
         let path = std::path::PathBuf::from_str(&path).unwrap();
         let path = std::path::Path::new(&path);
         let name = path.file_name().expect("filename error");
         let code = std::fs::read_to_string(path).expect("read file error");
         async_with!(ctx => |ctx|  {
-            for i in init_global {
-                i(&ctx).unwrap();
-            }
-
             Module::evaluate(ctx.clone(), name.to_string_lossy().to_string(), code)
                 .unwrap()
                 .finish::<()>()
