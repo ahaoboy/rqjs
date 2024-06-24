@@ -48,7 +48,8 @@ pub async fn start(args: Args) {
         modules::buffer::init,
         modules::exceptions::init,
         modules::encoding::init,
-        modules::console::init,
+        // modules::console::init,
+        modules::console_deno::init,
     ];
     let rt = AsyncRuntime::new().unwrap();
     rt.set_loader(resolver, loader).await;
