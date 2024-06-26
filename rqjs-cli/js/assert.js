@@ -6,5 +6,7 @@ assert(true)
 try {
   assert(false)
 } catch (e) {
-  console.log(e)
+  console.log('catch:\n', e)
 }
+
+assert(false)

@@ -2538,7 +2538,7 @@ var require_assertion_error = __commonJS({
             return "".concat(kReadableOperator[operator], "\n\n") + "".concat(actualLines[0], " !== ").concat(expectedLines[0], "\n");
           }
         } else if (operator !== "strictEqualObject") {
-          var maxLength = process.stderr && process.stderr.isTTY ? process.stderr.columns : 80;
+          var maxLength = false ? false.columns : 80;
           if (inputLength < maxLength) {
             while (actualLines[0][i] === expectedLines[0][i]) {
               i++;
@@ -2673,8 +2673,8 @@ var require_assertion_error = __commonJS({
         if (message != null) {
           _this = _super.call(this, String(message));
         } else {
-          if (process.stderr && process.stderr.isTTY) {
-            if (process.stderr && process.stderr.getColorDepth && process.stderr.getColorDepth() !== 1) {
+          if (false) {
+            if (false) {
               blue = "\x1B[34m";
               green = "\x1B[32m";
               white = "\x1B[39m";

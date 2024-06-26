@@ -6,7 +6,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build:scripts": "esbuild ./deno-scripts/*.ts --bundle --format=esm --outdir=./deno-scripts --define:process.env.NODE_DEBUG=false",
+    "build:scripts": "esbuild ./deno-scripts/*.ts --bundle --format=esm --outdir=./deno-scripts --define:process.env.NODE_DEBUG=false --define:process.stderr=false",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
