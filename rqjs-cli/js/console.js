@@ -8,3 +8,5 @@ console.log(a)
 
 console.log('Promise:', Promise.resolve(1))
 console.log('Proxy:', new Proxy({ a: 1 }, {}))
+
+console.table({ a: 1 })

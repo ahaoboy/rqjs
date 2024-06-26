@@ -20,6 +20,9 @@ importers:
       esbuild:
         specifier: ^0.21.5
         version: 0.21.5
+      object-inspect:
+        specifier: ^1.13.2
+        version: 1.13.2
 
 packages:
 
@@ -285,6 +288,10 @@ packages:
   mute-stream@1.0.0:
     resolution: {integrity: sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  object-inspect@1.13.2:
+    resolution: {integrity: sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==}
+    engines: {node: '>= 0.4'}
 
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
@@ -562,6 +569,8 @@ snapshots:
   is-fullwidth-code-point@3.0.0: {}
 
   mute-stream@1.0.0: {}
+
+  object-inspect@1.13.2: {}
 
   os-tmpdir@1.0.2: {}
 

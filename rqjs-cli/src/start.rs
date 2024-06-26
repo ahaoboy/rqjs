@@ -18,48 +18,14 @@ use rquickjs::{
     AsyncContext, AsyncRuntime, Ctx, Function, Module, Object, Result, Value,
 };
 
-use rqjs_ext::modules;
+use rqjs_ext::{install_ext_async, modules};
 
 pub async fn start(args: Args) {
     let Args { file } = args;
-    let resolver = (
-        BuiltinResolver::default().with_module("os"),
-        BuiltinResolver::default().with_module("path"),
-        BuiltinResolver::default().with_module("buffer"),
-        BuiltinResolver::default().with_module("util"),
-        BuiltinResolver::default().with_module("uuid"),
-        BuiltinResolver::default().with_module("xml"),
-        BuiltinResolver::default().with_module("fs"),
-        BuiltinResolver::default().with_module("fs/promises"),
-    );
-
-    let loader = (
-        ModuleLoader::default().with_module("os", modules::os::OsModule),
-        ModuleLoader::default().with_module("path", modules::path::PathModule),
-        ModuleLoader::default().with_module("buffer", modules::buffer::BufferModule),
-        ModuleLoader::default().with_module("util", modules::util::UtilModule),
-        ModuleLoader::default().with_module("uuid", modules::uuid::UuidModule),
-        ModuleLoader::default().with_module("xml", modules::xml::XmlModule),
-        ModuleLoader::default().with_module("fs", modules::fs::FsModule),
-        ModuleLoader::default().with_module("fs/promises", modules::fs::FsPromisesModule),
-    );
-
-    let init_global: Vec<fn(&Ctx<'_>) -> Result<()>> = vec![
-        modules::buffer::init,
-        modules::exceptions::init,
-        modules::encoding::init,
-        // modules::console::init,
-        modules::console_deno::init,
-    ];
     let rt = AsyncRuntime::new().unwrap();
-    rt.set_loader(resolver, loader).await;
     let ctx = AsyncContext::full(&rt).await.unwrap();
-    ctx.with(|ctx| {
-        for i in init_global {
-            i(&ctx).unwrap();
-        }
-    })
-    .await;
+    install_ext_async(&rt, &ctx).await;
+
     if let Some(path) = file {
         let path = std::path::PathBuf::from_str(&path).unwrap();
         let path = std::path::Path::new(&path);

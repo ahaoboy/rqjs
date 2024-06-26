@@ -7,6 +7,7 @@
   "main": "index.js",
   "scripts": {
     "build:console": "esbuild ./deno-scripts/00_core.ts --bundle --format=iife --outdir=./deno-scripts",
+    "build:ts": "esbuild ./ts/*.ts --bundle --format=iife --outdir=./js --platform=node --format=esm",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
