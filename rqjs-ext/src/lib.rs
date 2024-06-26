@@ -4,7 +4,9 @@
 
 use std::default;
 
-use modules::{assert::ASSERT_MODULE, inspect::INSPECT_MODULE, xml::XmlModule};
+use modules::{
+    assert::ASSERT_MODULE, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule,
+};
 use rquickjs::{
     loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader},
     AsyncContext, AsyncRuntime, Ctx, Result,
@@ -40,18 +42,20 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         .with_module("uuid")
         .with_module("xml")
         .with_module("fs")
-        .with_module("fs")
+        // .with_module("fs")
         .with_module("inspect")
         .with_module("fs/promises"),);
 
     let loader = (
         // BuiltinLoader::default().with_module("assert", ASSERT_MODULE),
-        BuiltinLoader::default().with_module("inspect", INSPECT_MODULE),
+        BuiltinLoader::default()
+            .with_module("inspect", INSPECT_MODULE)
+            .with_module("util", UTIL_MODULE),
         ModuleLoader::default()
             .with_module("os", modules::os::OsModule)
             .with_module("path", modules::path::PathModule)
             .with_module("buffer", modules::buffer::BufferModule)
-            .with_module("util", modules::util::UtilModule)
+            // .with_module("util", modules::util::UtilModule)
             .with_module("uuid", modules::uuid::UuidModule)
             .with_module("fs", modules::fs::FsModule)
             .with_module("xml", XmlModule)
