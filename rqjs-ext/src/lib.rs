@@ -39,6 +39,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         .with_module("path")
         .with_module("buffer")
         .with_module("util")
+        .with_module("assert")
         .with_module("uuid")
         .with_module("xml")
         .with_module("fs")
@@ -50,7 +51,8 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         // BuiltinLoader::default().with_module("assert", ASSERT_MODULE),
         BuiltinLoader::default()
             .with_module("inspect", INSPECT_MODULE)
-            .with_module("util", UTIL_MODULE),
+            .with_module("util", UTIL_MODULE)
+            .with_module("assert", ASSERT_MODULE),
         ModuleLoader::default()
             .with_module("os", modules::os::OsModule)
             .with_module("path", modules::path::PathModule)

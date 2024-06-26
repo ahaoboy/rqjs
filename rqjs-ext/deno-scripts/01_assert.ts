@@ -1,3 +1,3 @@
-import inspect from 'object-inspect'
+import assert from 'assert'
 
-export { inspect }
+export default assert
