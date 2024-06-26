@@ -5,7 +5,7 @@
 use std::default;
 
 use modules::{
-    assert::ASSERT_MODULE, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule,
+    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
 };
 use rquickjs::{
     loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader},
@@ -43,8 +43,8 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         .with_module("uuid")
         .with_module("xml")
         .with_module("fs")
-        // .with_module("fs")
         .with_module("inspect")
+        .with_module("diagnostics_channel")
         .with_module("fs/promises"),);
 
     let loader = (
@@ -52,7 +52,8 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         BuiltinLoader::default()
             .with_module("inspect", INSPECT_MODULE)
             .with_module("util", UTIL_MODULE)
-            .with_module("assert", ASSERT_MODULE),
+            .with_module("assert", ASSERT_MODULE)
+            .with_module("diagnostics_channel", DIAGNOSTICS_CHANNEL_MODULE),
         ModuleLoader::default()
             .with_module("os", modules::os::OsModule)
             .with_module("path", modules::path::PathModule)

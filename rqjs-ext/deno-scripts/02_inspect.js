@@ -4,7 +4,13 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __commonJS = (cb, mod) => function __require() {
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __commonJS = (cb, mod) => function __require2() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __copyProps = (to, from, except, desc) => {
@@ -24,9 +30,10 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// (disabled):node_modules/.pnpm/object-inspect@1.13.2/node_modules/object-inspect/util.inspect
-var require_util = __commonJS({
-  "(disabled):node_modules/.pnpm/object-inspect@1.13.2/node_modules/object-inspect/util.inspect"() {
+// node_modules/.pnpm/object-inspect@1.13.2/node_modules/object-inspect/util.inspect.js
+var require_util_inspect = __commonJS({
+  "node_modules/.pnpm/object-inspect@1.13.2/node_modules/object-inspect/util.inspect.js"(exports, module) {
+    module.exports = __require("util").inspect;
   }
 });
 
@@ -84,7 +91,7 @@ var require_object_inspect = __commonJS({
       }
       return $replace.call(str, sepRegex, "$&_");
     }
-    var utilInspect = require_util();
+    var utilInspect = require_util_inspect();
     var inspectCustom = utilInspect.custom;
     var inspectSymbol = isSymbol(inspectCustom) ? inspectCustom : null;
     module.exports = function inspect_(obj, options, depth, seen) {

@@ -17,5 +17,6 @@ pub mod assert;
 pub mod inspect;
 pub mod console_deno;
 pub mod node_util;
+pub mod diagnostics_channel;
 
 pub(crate) mod macros;
