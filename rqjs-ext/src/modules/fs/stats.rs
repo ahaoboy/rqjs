@@ -5,16 +5,12 @@ use crate::utils::result::ResultExt;
 use rquickjs::{Ctx, Result};
 use tokio::fs;
 
-use std::{
-    fs::Metadata,
-    time::{SystemTime},
-};
+use std::{fs::Metadata, time::SystemTime};
 
 #[cfg(unix)]
 use std::os::unix::fs::FileTypeExt;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
-
 
 #[rquickjs::class]
 #[derive(rquickjs::class::Trace)]
@@ -216,7 +212,8 @@ impl Stat {
     pub fn ctime(&self) -> SystemTime {
         #[cfg(unix)]
         {
-            SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(self.metadata.ctime_nsec() as u64)
+            SystemTime::UNIX_EPOCH
+                + std::time::Duration::from_nanos(self.metadata.ctime_nsec() as u64)
         }
         #[cfg(not(unix))]
         {

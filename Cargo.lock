@@ -1337,6 +1337,7 @@ dependencies = [
  "base64-simd",
  "chrono",
  "clap",
+ "colored",
  "crc32c",
  "crc32fast",
  "cross-uname",

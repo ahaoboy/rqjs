@@ -13,4 +13,5 @@ use rquickjs::{
     AsyncContext, Ctx, Function, Result,
 };
 
-pub const DIAGNOSTICS_CHANNEL_MODULE: &str = include_str!("../../deno-scripts/05_diagnostics_channel.js");
+pub const DIAGNOSTICS_CHANNEL_MODULE: &str =
+    include_str!("../../deno-scripts/05_diagnostics_channel.js");

@@ -52,3 +52,4 @@ crc32fast = "1.4.2"
 # md-5 = { version = "0.10.6", features = ["asm"] }
 md-5 = { version = "0.10.6" }
 log = { version = "0.4" }
+colored = "2.1"

@@ -2,13 +2,18 @@
 #![allow(clippy::inherent_to_string)]
 #![cfg_attr(rust_nightly, feature(portable_simd))]
 
-use std::{default, future::Future};
+use std::{default, future::Future, process::exit};
 
+use colored::*;
 use modules::{
-    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
+    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE,
+    inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule,
 };
 use rquickjs::{
-    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, Ctx, Result
+    atom::PredefinedAtom,
+    function::Constructor,
+    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader},
+    AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Ctx, Object, Result,
 };
 
 #[macro_use]
@@ -48,9 +53,9 @@ impl<'js> CtxExtension<'js> for Ctx<'js> {
     {
         let ctx = self.clone();
 
-        // let type_error_ctor: Constructor = ctx.globals().get(PredefinedAtom::TypeError)?;
-        // let type_error: Object = type_error_ctor.construct(())?;
-        // let stack: Option<String> = type_error.get(PredefinedAtom::Stack).ok();
+        let type_error_ctor: Constructor = ctx.globals().get(PredefinedAtom::TypeError)?;
+        let type_error: Object = type_error_ctor.construct(())?;
+        let stack: Option<String> = type_error.get(PredefinedAtom::Stack).ok();
 
         let (join_channel_tx, join_channel_rx) = oneshot::channel();
 
@@ -59,19 +64,25 @@ impl<'js> CtxExtension<'js> for Ctx<'js> {
                 Ok(res) => {
                     //result here dosn't matter if receiver has dropped
                     let _ = join_channel_tx.send(res);
-                },
+                }
                 Err(err) => {
-                    // if let CaughtError::Exception(err) = err {
-                    //     if err.stack().is_none() {
-                    //         if let Some(stack) = stack {
-                    //             err.set(PredefinedAtom::Stack, stack).unwrap();
-                    //         }
-                    //     }
-                    //     Vm::print_error_and_exit(&ctx, CaughtError::Exception(err));
-                    // } else {
-                    //     Vm::print_error_and_exit(&ctx, err);
-                    // }
-                },
+                    if let CaughtError::Exception(err) = err {
+                        if err.stack().is_none() {
+                            if let Some(stack) = stack {
+                                err.set(PredefinedAtom::Stack, stack).unwrap();
+                            }
+                        }
+                        let obj = err.as_object();
+                        let message = obj.get::<_, String>("message").unwrap();
+                        let stack = obj.get::<_, String>("stack").unwrap();
+                        println!("{}", format!("{}\n{}", message, stack).red());
+                        exit(1);
+                    } else {
+                        println!("{:?}", err);
+                        exit(1);
+                        // Vm::print_error_and_exit(&ctx, err);
+                    }
+                }
             }
         });
         Ok(join_channel_rx)

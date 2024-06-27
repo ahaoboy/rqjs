@@ -9,7 +9,9 @@ use std::{
 };
 
 use rquickjs::{
-    function::Func, module::{Declarations, Exports, ModuleDef}, Ctx, Function, Result
+    function::Func,
+    module::{Declarations, Exports, ModuleDef},
+    Ctx, Function, Result,
 };
 
 use crate::CtxExtension;

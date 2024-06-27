@@ -1,10 +1,9 @@
+use colored::*;
 use std::{
-    error::Error,
     io::{stdout, Write},
-    process,
+    process::{self, exit},
     str::FromStr,
 };
-    use colored::*;
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -15,13 +14,9 @@ pub struct Args {
 }
 
 use clap::Parser;
-use rquickjs::{
-    async_with,
-    loader::{BuiltinResolver, ModuleLoader},
-    AsyncContext, AsyncRuntime, Ctx, Function, Module, Object, Result, Value,
-};
+use rquickjs::{async_with, AsyncContext, AsyncRuntime, Function, Module, Object, Value};
 
-use rqjs_ext::{install_ext_async, modules, vm::ErrorExtensions};
+use rqjs_ext::{install_ext_async, vm::ErrorExtensions};
 
 pub async fn start(args: Args) {
     let Args { file } = args;
@@ -85,10 +80,12 @@ pub async fn start(args: Args) {
                         let obj = v.as_object().unwrap();
                         let message = obj.get::<_, String>("message").unwrap();
                         let stack = obj.get::<_, String>("stack").unwrap();
-                        println!("{}",format!("{}\n{}", message, stack).red());
+                        println!("{}", format!("{}\n{}", message, stack).red());
+                        exit(1);
                     }
                     Err(v) => {
                         println!("{:?}", v);
+                        exit(1);
                     }
                 },
             })
