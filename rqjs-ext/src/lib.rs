@@ -2,14 +2,13 @@
 #![allow(clippy::inherent_to_string)]
 #![cfg_attr(rust_nightly, feature(portable_simd))]
 
-use std::default;
+use std::{default, future::Future};
 
 use modules::{
     assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
 };
 use rquickjs::{
-    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader},
-    AsyncContext, AsyncRuntime, Ctx, Result,
+    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, Ctx, Result
 };
 
 #[macro_use]
@@ -32,6 +31,52 @@ mod stream;
 pub mod utils;
 pub mod vm;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+use tokio::sync::oneshot::{self, Receiver};
+
+pub trait CtxExtension<'js> {
+    fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
+    where
+        F: Future<Output = Result<R>> + 'js,
+        R: 'js;
+}
+
+impl<'js> CtxExtension<'js> for Ctx<'js> {
+    fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
+    where
+        F: Future<Output = Result<R>> + 'js,
+        R: 'js,
+    {
+        let ctx = self.clone();
+
+        // let type_error_ctor: Constructor = ctx.globals().get(PredefinedAtom::TypeError)?;
+        // let type_error: Object = type_error_ctor.construct(())?;
+        // let stack: Option<String> = type_error.get(PredefinedAtom::Stack).ok();
+
+        let (join_channel_tx, join_channel_rx) = oneshot::channel();
+
+        self.spawn(async move {
+            match future.await.catch(&ctx) {
+                Ok(res) => {
+                    //result here dosn't matter if receiver has dropped
+                    let _ = join_channel_tx.send(res);
+                },
+                Err(err) => {
+                    // if let CaughtError::Exception(err) = err {
+                    //     if err.stack().is_none() {
+                    //         if let Some(stack) = stack {
+                    //             err.set(PredefinedAtom::Stack, stack).unwrap();
+                    //         }
+                    //     }
+                    //     Vm::print_error_and_exit(&ctx, CaughtError::Exception(err));
+                    // } else {
+                    //     Vm::print_error_and_exit(&ctx, err);
+                    // }
+                },
+            }
+        });
+        Ok(join_channel_rx)
+    }
+}
 
 pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
     let resolver = (BuiltinResolver::default()
@@ -44,6 +89,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         .with_module("xml")
         .with_module("fs")
         .with_module("inspect")
+        .with_module("perf_hooks")
         .with_module("diagnostics_channel")
         .with_module("fs/promises"),);
 
@@ -60,6 +106,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
             .with_module("buffer", modules::buffer::BufferModule)
             // .with_module("util", modules::util::UtilModule)
             .with_module("uuid", modules::uuid::UuidModule)
+            .with_module("perf_hooks", modules::perf_hooks::PerfHooksModule)
             .with_module("fs", modules::fs::FsModule)
             .with_module("xml", XmlModule)
             .with_module("fs/promises", modules::fs::FsPromisesModule),
@@ -71,6 +118,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         modules::encoding::init,
         // modules::console::init,
         modules::console_deno::init,
+        modules::timers::init,
     ];
     rt.set_loader(resolver, loader).await;
     ctx.with(|ctx| {

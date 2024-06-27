@@ -9,9 +9,10 @@ use std::{
 };
 
 use rquickjs::{
-    module::{Declarations, Exports, ModuleDef},
-    Ctx, Function, Result,
+    function::Func, module::{Declarations, Exports, ModuleDef}, Ctx, Function, Result
 };
+
+use crate::CtxExtension;
 
 use super::module::export_default;
 
@@ -58,7 +59,7 @@ fn set_timeout_interval<'js>(
         delay,
     });
     if !TIME_POLL_ACTIVE.load(Ordering::Relaxed) {
-        // poll_timers(ctx, timeouts.clone())?
+        poll_timers(ctx, timeouts.clone())?
     }
 
     Ok(id)
@@ -110,89 +111,89 @@ impl ModuleDef for TimersModule {
 //     }
 // }
 
-// pub fn init(ctx: &Ctx<'_>) -> Result<()> {
-//     let globals = ctx.globals();
+pub fn init(ctx: &Ctx<'_>) -> Result<()> {
+    let globals = ctx.globals();
 
-//     #[allow(clippy::arc_with_non_send_sync)]
-//     let timeouts = Arc::new(Mutex::new(Vec::<Timeout>::new()));
-//     let timeouts2 = timeouts.clone();
-//     let timeouts3 = timeouts.clone();
-//     let timeouts4 = timeouts.clone();
+    #[allow(clippy::arc_with_non_send_sync)]
+    let timeouts = Arc::new(Mutex::new(Vec::<Timeout>::new()));
+    let timeouts2 = timeouts.clone();
+    let timeouts3 = timeouts.clone();
+    let timeouts4 = timeouts.clone();
 
-//     globals.set(
-//         "setTimeout",
-//         Func::from(move |ctx, cb, delay| set_timeout_interval(&ctx, &timeouts, cb, delay, false)),
-//     )?;
+    globals.set(
+        "setTimeout",
+        Func::from(move |ctx, cb, delay| set_timeout_interval(&ctx, &timeouts, cb, delay, false)),
+    )?;
 
-//     globals.set(
-//         "setInterval",
-//         Func::from(move |ctx, cb, delay| set_timeout_interval(&ctx, &timeouts2, cb, delay, true)),
-//     )?;
+    globals.set(
+        "setInterval",
+        Func::from(move |ctx, cb, delay| set_timeout_interval(&ctx, &timeouts2, cb, delay, true)),
+    )?;
 
-//     globals.set(
-//         "clearTimeout",
-//         Func::from(move |id: usize| clear_timeout_interval(&timeouts3, id)),
-//     )?;
+    globals.set(
+        "clearTimeout",
+        Func::from(move |id: usize| clear_timeout_interval(&timeouts3, id)),
+    )?;
 
-//     globals.set(
-//         "clearInterval",
-//         Func::from(move |id: usize| clear_timeout_interval(&timeouts4, id)),
-//     )?;
+    globals.set(
+        "clearInterval",
+        Func::from(move |id: usize| clear_timeout_interval(&timeouts4, id)),
+    )?;
 
-//     globals.set("setImmediate", Func::from(set_immediate))?;
+    globals.set("setImmediate", Func::from(set_immediate))?;
 
-//     Ok(())
-// }
+    Ok(())
+}
 
-// #[inline(always)]
-// fn poll_timers<'js>(ctx: &Ctx<'js>, timeouts: Arc<Mutex<Vec<Timeout<'js>>>>) -> Result<()> {
-//     TIME_POLL_ACTIVE.store(true, Ordering::Relaxed);
+#[inline(always)]
+fn poll_timers<'js>(ctx: &Ctx<'js>, timeouts: Arc<Mutex<Vec<Timeout<'js>>>>) -> Result<()> {
+    TIME_POLL_ACTIVE.store(true, Ordering::Relaxed);
 
-//     ctx.spawn_exit(async move {
-//         let mut interval = tokio::time::interval(Duration::from_millis(1));
-//         let mut to_call = Some(Vec::new());
-//         let mut exit_after_next_tick = false;
-//         loop {
-//             interval.tick().await;
+    ctx.spawn_exit(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_millis(1));
+        let mut to_call = Some(Vec::new());
+        let mut exit_after_next_tick = false;
+        loop {
+            interval.tick().await;
 
-//             let mut call_vec = to_call.take().unwrap(); //avoid creating a new vec
-//             let current_time = get_current_time_millis();
-//             let mut had_items = false;
+            let mut call_vec = to_call.take().unwrap(); //avoid creating a new vec
+            let current_time = get_current_time_millis();
+            let mut had_items = false;
 
-//             timeouts.lock().unwrap().retain_mut(|timeout| {
-//                 had_items = true;
-//                 exit_after_next_tick = false;
-//                 if current_time > timeout.timeout {
-//                     if !timeout.repeating {
-//                         //do not clone if not not repeating
-//                         call_vec.push(timeout.cb.take());
-//                         return false;
-//                     }
-//                     timeout.timeout = current_time + timeout.delay;
-//                     call_vec.push(timeout.cb.clone());
-//                 }
-//                 true
-//             });
+            timeouts.lock().unwrap().retain_mut(|timeout| {
+                had_items = true;
+                exit_after_next_tick = false;
+                if current_time > timeout.timeout {
+                    if !timeout.repeating {
+                        //do not clone if not not repeating
+                        call_vec.push(timeout.cb.take());
+                        return false;
+                    }
+                    timeout.timeout = current_time + timeout.delay;
+                    call_vec.push(timeout.cb.clone());
+                }
+                true
+            });
 
-//             for cb in call_vec.iter_mut() {
-//                 if let Some(cb) = cb.take() {
-//                     cb.call::<(), ()>(())?;
-//                 };
-//             }
+            for cb in call_vec.iter_mut() {
+                if let Some(cb) = cb.take() {
+                    cb.call::<(), ()>(())?;
+                };
+            }
 
-//             call_vec.clear();
-//             to_call.replace(call_vec);
+            call_vec.clear();
+            to_call.replace(call_vec);
 
-//             if !had_items {
-//                 if exit_after_next_tick {
-//                     break;
-//                 }
-//                 exit_after_next_tick = true;
-//             }
-//         }
-//         TIME_POLL_ACTIVE.store(false, Ordering::Relaxed);
+            if !had_items {
+                if exit_after_next_tick {
+                    break;
+                }
+                exit_after_next_tick = true;
+            }
+        }
+        TIME_POLL_ACTIVE.store(false, Ordering::Relaxed);
 
-//         Ok(())
-//     })?;
-//     Ok(())
-// }
+        Ok(())
+    })?;
+    Ok(())
+}

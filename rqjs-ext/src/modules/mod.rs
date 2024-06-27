@@ -18,5 +18,6 @@ pub mod inspect;
 pub mod console_deno;
 pub mod node_util;
 pub mod diagnostics_channel;
+pub mod perf_hooks;
 
 pub(crate) mod macros;
