@@ -2,14 +2,13 @@
 #![allow(clippy::inherent_to_string)]
 #![cfg_attr(rust_nightly, feature(portable_simd))]
 
-use std::{default, future::Future, process::exit};
+use std::{default, future::Future, process::exit, sync::atomic::AtomicUsize};
 
 use colored::*;
 use modules::{
     assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, events::Emitter, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
 };
-use rquickjs::{String as JsString,
-    atom::PredefinedAtom, function::{Constructor, This}, loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Class, Ctx, Error, Object, Result, Value
+use rquickjs::{atom::PredefinedAtom, function::{Constructor, This}, loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, Resolver, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Class, Ctx, Error, Object, Result, String as JsString, Value
 };
 
 #[macro_use]
@@ -43,6 +42,7 @@ impl<'js> ErrorExtensions<'js> for Error {
         Err::<(), _>(self).catch(ctx).unwrap_err().into_value(ctx)
     }
 }
+pub static TIME_ORIGIN: AtomicUsize = AtomicUsize::new(0);
 
 impl<'js> ErrorExtensions<'js> for CaughtError<'js> {
     fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
@@ -129,11 +129,33 @@ impl<'js, T> EmitError<'js> for Result<T> {
     }
 }
 
+pub struct ModuleResolver{
+  builtin_resolver:BuiltinResolver
+}
+
+impl ModuleResolver {
+    #[must_use]
+    pub fn with_module<P: Into<String>>(mut self, path: P) -> Self {
+        self.builtin_resolver.add_module(path.into());
+        self
+    }
+}
+
+impl Resolver for ModuleResolver {
+    fn resolve(&mut self, ctx: &Ctx<'_>, base: &str, name: &str) -> Result<String> {
+        // Strip node prefix so that we support both with and without
+        let name = name.strip_prefix("node:").unwrap_or(name);
+        self.builtin_resolver.resolve(ctx, base, name)
+    }
+}
 
 pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
-    let resolver = (BuiltinResolver::default()
+
+    let r = ModuleResolver{
+        builtin_resolver: BuiltinResolver::default()
         .with_module("child_process")
         .with_module("os")
+        .with_module("tty")
         .with_module("stream")
         .with_module("path")
         .with_module("buffer")
@@ -141,11 +163,15 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         .with_module("assert")
         .with_module("uuid")
         .with_module("xml")
+        .with_module("process")
         .with_module("fs")
         .with_module("inspect")
         .with_module("perf_hooks")
         .with_module("diagnostics_channel")
-        .with_module("fs/promises"),);
+        .with_module("fs/promises"),
+    };
+
+    let resolver = (r,);
 
     let loader = (
         // BuiltinLoader::default().with_module("assert", ASSERT_MODULE),
@@ -156,6 +182,8 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
             .with_module("assert", ASSERT_MODULE)
             .with_module("diagnostics_channel", DIAGNOSTICS_CHANNEL_MODULE),
         ModuleLoader::default()
+            .with_module("process", modules::process::ProcessModule)
+            .with_module("tty", modules::tty::TtyModule)
             .with_module("child_process", modules::child_proess::ChildProcessModule)
             .with_module("os", modules::os::OsModule)
             .with_module("path", modules::path::PathModule)
@@ -173,9 +201,11 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         modules::events::init,
         modules::exceptions::init,
         modules::encoding::init,
+        modules::util::init,
         // modules::console::init,
         modules::console_deno::init,
         modules::timers::init,
+        modules::process::init,
     ];
     rt.set_loader(resolver, loader).await;
     ctx.with(|ctx| {

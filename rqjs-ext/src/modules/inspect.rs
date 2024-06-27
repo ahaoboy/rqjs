@@ -13,4 +13,4 @@ use rquickjs::{
     AsyncContext, Ctx, Function, Result,
 };
 
-pub const INSPECT_MODULE: &str = include_str!("../../deno-scripts/02_inspect.js");
+pub const INSPECT_MODULE: &str = include_str!("../../js/02_inspect.js");

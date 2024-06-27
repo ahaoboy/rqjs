@@ -6,7 +6,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build:script": "esbuild ./ts/* --bundle --format=esm --outdir=./js --external:node:* --external:child_process --external:util --external:fs --external:stream --external:assert --external:events --external:module --external:path  --external:crypto --external:tty",
+    "build:script": "esbuild ./script/* --bundle --format=esm --outdir=./js  --external:path --external:fs --external:util  --external:crypto --external:assert --external:child_process --external:node:buffer --external:node:buffer --external:node:fs --external:node:events --external:node:process --external:node:async_hooks --external:node:stream --define:navigator=false --define:process.env.NODE_DEBUG=false --define:process.stderr=false",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,6 +15,7 @@
   "devDependencies": {
     "@inquirer/prompts": "^5.0.6",
     "@types/node": "^20.14.5",
+    "chalk": "^5.3.0",
     "deno-console": "^0.1.3",
     "esbuild": "^0.21.5",
     "ink": "^5.0.1",

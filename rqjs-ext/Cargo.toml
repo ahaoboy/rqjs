@@ -54,3 +54,4 @@ md-5 = { version = "0.10.6" }
 log = { version = "0.4" }
 colored = "2.1"
 libc="*"
+atty = "0.2"

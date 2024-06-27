@@ -2034,7 +2034,7 @@ var require_util = __commonJS({
   }
 });
 
-// deno-scripts/05_diagnostics_channel.ts
+// script/05_diagnostics_channel.ts
 var import_util = __toESM(require_util(), 1);
 var ERR_INVALID_ARG_TYPE = class extends TypeError {
   constructor(message, actual) {

@@ -18,7 +18,7 @@ fn print(s: String) {
     print!("{s}");
 }
 pub fn init(ctx: &Ctx<'_>) -> Result<()> {
-    let core = include_str!("../../deno-scripts/00_console.js");
+    let core = include_str!("../../js/00_console.js");
     let global = ctx.globals();
     global
         .set(

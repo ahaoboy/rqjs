@@ -13,4 +13,4 @@ use rquickjs::{
     AsyncContext, Ctx, Function, Result,
 };
 
-pub const ASSERT_MODULE: &str = include_str!("../../deno-scripts/01_assert.js");
+pub const ASSERT_MODULE: &str = include_str!("../../js/01_assert.js");

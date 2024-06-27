@@ -8,5 +8,3 @@ try {
 } catch (e) {
   console.log('catch:\n', e)
 }
-
-assert(false)

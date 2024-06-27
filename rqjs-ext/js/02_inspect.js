@@ -545,7 +545,7 @@ var require_object_inspect = __commonJS({
   }
 });
 
-// deno-scripts/02_inspect.ts
+// script/02_inspect.ts
 var import_object_inspect = __toESM(require_object_inspect(), 1);
 var export_inspect = import_object_inspect.default;
 export {

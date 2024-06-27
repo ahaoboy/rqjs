@@ -14,4 +14,4 @@ use rquickjs::{
 };
 
 pub const DIAGNOSTICS_CHANNEL_MODULE: &str =
-    include_str!("../../deno-scripts/05_diagnostics_channel.js");
+    include_str!("../../js/05_diagnostics_channel.js");

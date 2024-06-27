@@ -13,4 +13,4 @@ use rquickjs::{
     AsyncContext, Ctx, Function, Result,
 };
 
-pub const STREAM_MODULE: &str = include_str!("../../deno-scripts/06_stream.js");
+pub const STREAM_MODULE: &str = include_str!("../../js/06_stream.js");

@@ -21,5 +21,7 @@ pub mod uuid;
 pub mod xml;
 pub mod child_proess;
 pub mod stream;
+pub mod process;
+pub mod tty;
 
 pub(crate) mod macros;

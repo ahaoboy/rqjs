@@ -4275,7 +4275,7 @@ var require_assert = __commonJS({
   }
 });
 
-// deno-scripts/01_assert.ts
+// script/01_assert.ts
 var import_assert = __toESM(require_assert(), 1);
 var assert_default = import_assert.default;
 export {

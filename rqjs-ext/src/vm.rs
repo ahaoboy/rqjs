@@ -40,7 +40,6 @@ use rquickjs::{
 //     },
 // };
 
-// pub static TIME_ORIGIN: AtomicUsize = AtomicUsize::new(0);
 
 // #[inline]
 // pub fn uncompressed_size(input: &[u8]) -> StdResult<(usize, &[u8]), io::Error> {

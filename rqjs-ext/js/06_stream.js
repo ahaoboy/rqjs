@@ -8060,7 +8060,7 @@ var require_stream_passthrough = __commonJS({
   }
 });
 
-// deno-scripts/06_stream.ts
+// script/06_stream.ts
 var import_events = __toESM(require_events(), 1);
 var import_stream_readable = __toESM(require_stream_readable(), 1);
 var import_stream_writable = __toESM(require_stream_writable(), 1);

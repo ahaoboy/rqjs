@@ -13,4 +13,4 @@ use rquickjs::{
     AsyncContext, Ctx, Function, Result,
 };
 
-pub const UTIL_MODULE: &str = include_str!("../../deno-scripts/03_util.js");
+pub const UTIL_MODULE: &str = include_str!("../../js/03_util.js");

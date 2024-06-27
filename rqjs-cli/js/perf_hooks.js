@@ -5,7 +5,6 @@ const st = performance.now()
 console.log(st)
 
 setTimeout(() => {
-  a
   const end = performance.now()
   console.log('setTimeout', end - st)
 }, 1000);

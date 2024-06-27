@@ -37,6 +37,18 @@ impl ModuleDef for UtilModule {
     }
 }
 
+pub fn init(ctx: &Ctx<'_>) -> Result<()> {
+    let globals = ctx.globals();
+
+    let encoder: Function = globals.get(stringify!(TextEncoder))?;
+    let decoder: Function = globals.get(stringify!(TextDecoder))?;
+
+    globals.set(stringify!(TextEncoder), encoder)?;
+    globals.set(stringify!(TextDecoder), decoder)?;
+
+    Ok(())
+}
+
 // impl From<UtilModule> for ModuleInfo<UtilModule> {
 //     fn from(val: UtilModule) -> Self {
 //         ModuleInfo {

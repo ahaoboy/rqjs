@@ -12627,7 +12627,7 @@ var require_server_browser = __commonJS({
   }
 });
 
-// ts/react.tsx
+// script/react.tsx
 var import_react = __toESM(require_react(), 1);
 var import_server = __toESM(require_server_browser(), 1);
 var s = (0, import_server.renderToString)(/* @__PURE__ */ import_react.default.createElement("div", null, "hello "));

@@ -10,13 +10,13 @@ use std::{
 #[clap(name = "rqjs", version = env!("CARGO_PKG_VERSION"), bin_name = "rqjs")]
 pub struct Args {
     #[clap()]
-    file: Option<String>,
+    pub file: Option<String>,
 }
 
 use clap::Parser;
 use rquickjs::{async_with, AsyncContext, AsyncRuntime, Function, Module, Object, Value};
 
-use rqjs_ext::{install_ext_async , ErrorExtensions};
+use rqjs_ext::{install_ext_async, ErrorExtensions};
 
 pub async fn start(args: Args) {
     let Args { file } = args;
