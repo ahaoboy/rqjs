@@ -16,7 +16,7 @@ pub struct Args {
 use clap::Parser;
 use rquickjs::{async_with, AsyncContext, AsyncRuntime, Function, Module, Object, Value};
 
-use rqjs_ext::{install_ext_async, vm::ErrorExtensions};
+use rqjs_ext::{install_ext_async , ErrorExtensions};
 
 pub async fn start(args: Args) {
     let Args { file } = args;

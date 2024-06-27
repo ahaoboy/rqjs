@@ -5,15 +5,10 @@
 use std::sync::{Arc, RwLock};
 
 use rquickjs::{
-    class::{JsClass, OwnedBorrow, Trace, Tracer},
-    function::OnceFn,
-    module::{Declarations, Exports, ModuleDef},
-    prelude::{Func, Opt, Rest, This},
-    Array, Class, Ctx, Exception, Function, Object, Result, String as JsString, Symbol, Undefined,
-    Value,
+    class::{JsClass, OwnedBorrow, Trace, Tracer}, function::OnceFn, module::{Declarations, Exports, ModuleDef}, prelude::{Func, Opt, Rest, This}, Array, CatchResultExt, Class, Ctx, Exception, Function, Object, Result, String as JsString, Symbol, Undefined, Value
 };
 
-use crate::modules::exceptions::DOMException;
+use crate::{modules::exceptions::DOMException , ErrorExtensions};
 
 use crate::utils::{mc_oneshot, result::ResultExt};
 
@@ -88,22 +83,22 @@ pub trait EmitError<'js> {
         C: Emitter<'js>;
 }
 
-// impl<'js, T> EmitError<'js> for Result<T> {
-//     fn emit_error<C>(self, ctx: &Ctx<'js>, this: Class<'js, C>) -> Result<bool>
-//     where
-//         C: Emitter<'js>,
-//     {
-//         if let Err(err) = self.catch(ctx) {
-//             if this.borrow().has_listener_str("error") {
-//                 let error_value = err.into_value(ctx)?;
-//                 C::emit_str(This(this), ctx, "error", vec![error_value], false)?;
-//                 return Ok(true);
-//             }
-//             return Err(err.throw(ctx));
-//         }
-//         Ok(false)
-//     }
-// }
+impl<'js, T> EmitError<'js> for Result<T> {
+    fn emit_error<C>(self, ctx: &Ctx<'js>, this: Class<'js, C>) -> Result<bool>
+    where
+        C: Emitter<'js>,
+    {
+        if let Err(err) = self.catch(ctx) {
+            if this.borrow().has_listener_str("error") {
+                let error_value = err.into_value(ctx)?;
+                C::emit_str(This(this), ctx, "error", vec![error_value], false)?;
+                return Ok(true);
+            }
+            return Err(err.throw(ctx));
+        }
+        Ok(false)
+    }
+}
 
 pub trait Emitter<'js>
 where

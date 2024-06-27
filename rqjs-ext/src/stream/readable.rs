@@ -5,11 +5,11 @@ use std::sync::{atomic::AtomicUsize, Arc, RwLock};
 use rquickjs::{
     class::{Trace, Tracer},
     prelude::{Func, Opt, This},
-    Class, Ctx, IntoJs, Null, Result, Value,
+    Class, Ctx, Error, IntoJs, Null, Result, Value,
 };
 
 use tokio::{
-    io::{AsyncRead, AsyncReadExt},
+    io::{AsyncRead, AsyncReadExt, BufReader},
     sync::{
         broadcast::{self, Sender},
         oneshot::Receiver,
@@ -20,10 +20,10 @@ use crate::{
     bytearray_buffer::BytearrayBuffer,
     modules::{
         buffer::Buffer,
-        events::{Emitter, EventEmitter, EventKey, EventList},
+        events::{EmitError, Emitter, EventEmitter, EventKey, EventList},
     },
-    utils::result::ResultExt,
-    // vm::CtxExtension,
+    stream::set_destroyed_and_error,
+    utils::result::ResultExt, CtxExtension,
 };
 
 use super::{SteamEvents, DEFAULT_BUFFER_SIZE};
@@ -71,7 +71,7 @@ impl<'js> ReadableStreamInner<'js> {
                     } else {
                         self.listener = None;
                     }
-                }
+                },
                 "readable" => {
                     if added {
                         self.state = ReadableState::Paused;
@@ -79,8 +79,8 @@ impl<'js> ReadableStreamInner<'js> {
                     } else {
                         self.listener = None;
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
         Ok(())
@@ -202,13 +202,13 @@ where
                             return Ok(());
                         }
                         vec![Buffer(buffer).into_js(ctx)?]
-                    }
+                    },
                     "readable" => {
                         vec![]
-                    }
+                    },
                     _ => {
                         vec![]
-                    }
+                    },
                 };
                 Self::emit_str(This(this), ctx, listener, args, false)?;
             }
@@ -240,141 +240,141 @@ where
         on_end: C,
     ) -> Result<Receiver<bool>> {
         let ctx2 = ctx.clone();
-        todo!()
-        // ctx.spawn_exit(async move {
-        //     let this2 = this.clone();
-        //     let ctx3 = ctx2.clone();
+        ctx.spawn_exit(async move {
+            let this2 = this.clone();
+            let ctx3 = ctx2.clone();
 
-        //     let borrow = this2.borrow();
-        //     let inner = borrow.inner();
-        //     let mut destroy_rx = inner.destroy_tx.subscribe();
-        //     let is_ended = inner.is_ended;
-        //     let mut is_destroyed = inner.is_destroyed;
-        //     let emit_close = inner.emit_close;
+            let borrow = this2.borrow();
+            let inner = borrow.inner();
+            let mut destroy_rx = inner.destroy_tx.subscribe();
+            let is_ended = inner.is_ended;
+            let mut is_destroyed = inner.is_destroyed;
+            let emit_close = inner.emit_close;
 
-        //     let mut listener_attached_tx = inner.data_listener_attached_tx.subscribe();
-        //     let ba_buffer = inner.buffer.clone();
-        //     let mut has_data = false;
-        //     drop(borrow);
+            let mut listener_attached_tx = inner.data_listener_attached_tx.subscribe();
+            let ba_buffer = inner.buffer.clone();
+            let mut has_data = false;
+            drop(borrow);
 
-        //     let read_function = async move {
-        //         let mut reader: BufReader<T> = BufReader::new(readable);
-        //         let mut buffer = Vec::<u8>::with_capacity(DEFAULT_BUFFER_SIZE);
-        //         let mut last_state = ReadableState::Init;
-        //         let mut error_value = None;
+            let read_function = async move {
+                let mut reader: BufReader<T> = BufReader::new(readable);
+                let mut buffer = Vec::<u8>::with_capacity(DEFAULT_BUFFER_SIZE);
+                let mut last_state = ReadableState::Init;
+                let mut error_value = None;
 
-        //         if !is_ended && !is_destroyed {
-        //             loop {
-        //                 tokio::select! {
-        //                     result = reader.read_buf(&mut buffer) => {
-        //                         let bytes_read = result.or_throw(&ctx3)?;
+                if !is_ended && !is_destroyed {
+                    loop {
+                        tokio::select! {
+                            result = reader.read_buf(&mut buffer) => {
+                                let bytes_read = result.or_throw(&ctx3)?;
 
-        //                         let mut state = this2.borrow().inner().state.clone();
-        //                         if !has_data && state == ReadableState::Init {
-        //                             this2.borrow_mut().inner_mut().state = ReadableState::Paused;
-        //                             state =  ReadableState::Paused;
-        //                             has_data = true;
-        //                         }
+                                let mut state = this2.borrow().inner().state.clone();
+                                if !has_data && state == ReadableState::Init {
+                                    this2.borrow_mut().inner_mut().state = ReadableState::Paused;
+                                    state =  ReadableState::Paused;
+                                    has_data = true;
+                                }
 
-        //                         match state {
-        //                             ReadableState::Flowing => {
-        //                                 if last_state == ReadableState::Paused {
-        //                                     if let Some(empty_buffer) = ba_buffer.read(None) {
-        //                                         buffer.extend(empty_buffer);
-        //                                     }
-        //                                 }
+                                match state {
+                                    ReadableState::Flowing => {
+                                        if last_state == ReadableState::Paused {
+                                            if let Some(empty_buffer) = ba_buffer.read(None) {
+                                                buffer.extend(empty_buffer);
+                                            }
+                                        }
 
-        //                                 if buffer.is_empty() {
-        //                                     break;
-        //                                 }
+                                        if buffer.is_empty() {
+                                            break;
+                                        }
 
-        //                                 Self::emit_str(
-        //                                     This(this2.clone()),
-        //                                     &ctx3,
-        //                                     "data",
-        //                                     vec![Buffer(buffer.clone()).into_js(&ctx3)?],
-        //                                     false
-        //                                 )?;
-        //                                 buffer.clear();
-        //                             },
-        //                             ReadableState::Paused => {
+                                        Self::emit_str(
+                                            This(this2.clone()),
+                                            &ctx3,
+                                            "data",
+                                            vec![Buffer(buffer.clone()).into_js(&ctx3)?],
+                                            false
+                                        )?;
+                                        buffer.clear();
+                                    },
+                                    ReadableState::Paused => {
 
-        //                                 if bytes_read == 0 {
-        //                                     break;
-        //                                 }
+                                        if bytes_read == 0 {
+                                            break;
+                                        }
 
-        //                                 let write_buffer_future = ba_buffer.write(&mut buffer);
-        //                                 Self::emit_str(
-        //                                     This(this2.clone()),
-        //                                     &ctx3,
-        //                                     "readable",
-        //                                     vec![],
-        //                                     false
-        //                                 )?;
-        //                                 tokio::select!{
-        //                                     capacity = write_buffer_future => {
-        //                                         buffer.clear();
-        //                                         //increase buffer capacity if bytearray buffer has more capacity to reduce read syscalls
-        //                                         buffer.reserve(buffer.capacity()-capacity);
-        //                                     }
-        //                                     error = destroy_rx.recv()  => {
-        //                                         set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
-        //                                         break;
-        //                                     }
-        //                                     _ = listener_attached_tx.recv() => {
-        //                                         ba_buffer.clear().await
-        //                                         //don't clear buffer
-        //                                     }
-        //                                 }
-        //                             },
-        //                             _ => {
-        //                                 //should not happen
-        //                             }
-        //                         }
+                                        let write_buffer_future = ba_buffer.write(&mut buffer);
+                                        Self::emit_str(
+                                            This(this2.clone()),
+                                            &ctx3,
+                                            "readable",
+                                            vec![],
+                                            false
+                                        )?;
+                                        tokio::select!{
+                                            capacity = write_buffer_future => {
+                                                buffer.clear();
+                                                //increase buffer capacity if bytearray buffer has more capacity to reduce read syscalls
+                                                buffer.reserve(buffer.capacity()-capacity);
+                                            }
+                                            error = destroy_rx.recv()  => {
+                                                set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
+                                                break;
+                                            }
+                                            _ = listener_attached_tx.recv() => {
+                                                ba_buffer.clear().await
+                                                //don't clear buffer
+                                            }
+                                        }
+                                    },
+                                    _ => {
+                                        //should not happen
+                                    }
+                                }
 
-        //                         last_state = state;
+                                last_state = state;
 
-        //                     }
-        //                     error = destroy_rx.recv()  => {
-        //                         set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
-        //                         break;
-        //                     },
-        //                 }
-        //             }
-        //         }
 
-        //         let mut borrow = this2.borrow_mut();
-        //         let inner = borrow.inner_mut();
-        //         inner.buffer.close().await;
-        //         if is_destroyed {
-        //             inner.is_destroyed = true;
-        //         } else {
-        //             inner.is_ended = true;
-        //         }
+                            }
+                            error = destroy_rx.recv()  => {
+                                set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
+                                break;
+                            },
+                        }
+                    }
+                }
 
-        //         drop(borrow);
-        //         drop(reader);
+                let mut borrow = this2.borrow_mut();
+                let inner = borrow.inner_mut();
+                inner.buffer.close().await;
+                if is_destroyed {
+                    inner.is_destroyed = true;
+                } else {
+                    inner.is_ended = true;
+                }
 
-        //         if !is_destroyed {
-        //             on_end();
-        //             Self::emit_str(This(this2), &ctx3, "end", vec![], false)?;
-        //         }
+                drop(borrow);
+                drop(reader);
 
-        //           if let Some(error_value) = error_value{
-        //             return Err(ctx3.throw(error_value));
-        //         }
+                if !is_destroyed {
+                    on_end();
+                    Self::emit_str(This(this2), &ctx3, "end", vec![], false)?;
+                }
 
-        //         Ok::<_, Error>(())
-        //     }
-        //     .await;
+                  if let Some(error_value) = error_value{
+                    return Err(ctx3.throw(error_value));
+                }
 
-        // // let had_error = read_function.emit_error(&ctx2, this.clone())?;
+                Ok::<_, Error>(())
+            }
+            .await;
 
-        // if emit_close {
-        //     Self::emit_close(this,&ctx2,had_error)?;
-        // }
+            let had_error = read_function.emit_error(&ctx2, this.clone())?;
 
-        // Ok::<_, Error>(had_error)
-        // })
+            if emit_close {
+                Self::emit_close(this,&ctx2,had_error)?;
+            }
+
+            Ok::<_, Error>(had_error)
+        })
     }
 }

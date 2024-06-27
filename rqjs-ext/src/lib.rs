@@ -6,14 +6,10 @@ use std::{default, future::Future, process::exit};
 
 use colored::*;
 use modules::{
-    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE,
-    inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule,
+    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, events::Emitter, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
 };
-use rquickjs::{
-    atom::PredefinedAtom,
-    function::Constructor,
-    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader},
-    AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Ctx, Object, Result,
+use rquickjs::{String as JsString,
+    atom::PredefinedAtom, function::{Constructor, This}, loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Class, Ctx, Error, Object, Result, Value
 };
 
 #[macro_use]
@@ -38,6 +34,27 @@ pub mod vm;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 use tokio::sync::oneshot::{self, Receiver};
 
+pub trait ErrorExtensions<'js> {
+    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>>;
+}
+
+impl<'js> ErrorExtensions<'js> for Error {
+    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
+        Err::<(), _>(self).catch(ctx).unwrap_err().into_value(ctx)
+    }
+}
+
+impl<'js> ErrorExtensions<'js> for CaughtError<'js> {
+    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
+        Ok(match self {
+            CaughtError::Error(err) => {
+                JsString::from_str(ctx.clone(), &err.to_string())?.into_value()
+            }
+            CaughtError::Exception(ex) => ex.into_value(),
+            CaughtError::Value(val) => val,
+        })
+    }
+}
 pub trait CtxExtension<'js> {
     fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
     where
@@ -89,8 +106,33 @@ impl<'js> CtxExtension<'js> for Ctx<'js> {
     }
 }
 
+pub trait EmitError<'js> {
+    fn emit_error<C>(self, ctx: &Ctx<'js>, this: Class<'js, C>) -> Result<bool>
+    where
+        C: Emitter<'js>;
+}
+
+impl<'js, T> EmitError<'js> for Result<T> {
+    fn emit_error<C>(self, ctx: &Ctx<'js>, this: Class<'js, C>) -> Result<bool>
+    where
+        C: Emitter<'js>,
+    {
+        if let Err(err) = self.catch(ctx) {
+            if this.borrow().has_listener_str("error") {
+                let error_value = err.into_value(ctx)?;
+                C::emit_str(This(this), ctx, "error", vec![error_value], false)?;
+                return Ok(true);
+            }
+            return Err(err.throw(ctx));
+        }
+        Ok(false)
+    }
+}
+
+
 pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
     let resolver = (BuiltinResolver::default()
+        .with_module("child_process")
         .with_module("os")
         .with_module("path")
         .with_module("buffer")
@@ -112,6 +154,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
             .with_module("assert", ASSERT_MODULE)
             .with_module("diagnostics_channel", DIAGNOSTICS_CHANNEL_MODULE),
         ModuleLoader::default()
+            .with_module("child_process", modules::child_proess::ChildProcessModule)
             .with_module("os", modules::os::OsModule)
             .with_module("path", modules::path::PathModule)
             .with_module("buffer", modules::buffer::BufferModule)

@@ -5,11 +5,11 @@ use std::sync::{Arc, RwLock};
 use rquickjs::{
     class::{Trace, Tracer},
     prelude::{Func, Opt, This},
-    Class, Ctx, Function, Result, Value,
+    Class, Ctx, Error, Exception, Function, Result, Value,
 };
 
 use tokio::{
-    io::{AsyncWrite, AsyncWriteExt},
+    io::{AsyncWrite, AsyncWriteExt, BufWriter},
     sync::{
         broadcast::{self, Sender},
         mpsc::{self, UnboundedReceiver, UnboundedSender},
@@ -18,9 +18,10 @@ use tokio::{
 };
 
 use crate::{
-    modules::events::{Emitter, EventEmitter, EventList},
-    utils::result::ResultExt,
-    // vm::{CtxExtension, ErrorExtensions},
+    modules::events::{EmitError, Emitter, EventEmitter, EventList},
+    stream::set_destroyed_and_error,
+    utils::{object::get_bytes, result::ResultExt},
+    CtxExtension, ErrorExtensions,
 };
 
 use super::SteamEvents;
@@ -193,25 +194,25 @@ where
         cb: Opt<Function<'js>>,
         flush: bool,
     ) -> Result<()> {
-        // let bytes = get_bytes(&ctx, value)?;
+        let bytes = get_bytes(&ctx, value)?;
 
-        // let callback = cb.0;
+        let callback = cb.0;
 
-        // if this
-        //     .borrow()
-        //     .inner()
-        //     .command_tx
-        //     .send(WriteCommand::Write(bytes, callback.clone(), flush))
-        //     .is_err()
-        // {
-        //     if let Some(cb) = callback {
-        //         let err =
-        //             Exception::throw_message(&ctx, "This socket has been ended by the other party")
-        //                 .into_value(&ctx)?;
+        if this
+            .borrow()
+            .inner()
+            .command_tx
+            .send(WriteCommand::Write(bytes, callback.clone(), flush))
+            .is_err()
+        {
+            if let Some(cb) = callback {
+                let err =
+                    Exception::throw_message(&ctx, "This socket has been ended by the other party")
+                        .into_value(&ctx)?;
 
-        //         () = cb.call((err,))?;
-        //     }
-        // }
+                () = cb.call((err,))?;
+            }
+        }
 
         Ok(())
     }
@@ -224,76 +225,76 @@ where
         let mut borrow = this.borrow_mut();
         let inner = borrow.inner_mut();
         let is_ended = inner.is_finished;
-        let is_destroyed = inner.is_destroyed;
+        let mut is_destroyed = inner.is_destroyed;
         let emit_close = inner.emit_close;
-        let command_rx = inner
+        let mut command_rx = inner
             .command_rx
             .take()
             .expect("rx from writable process already taken!");
-        let destroy_rx = inner.destroy_tx.subscribe();
-        todo!();
-        // let mut error_value = None;
+        let mut destroy_rx = inner.destroy_tx.subscribe();
+        let mut error_value = None;
 
-        // drop(borrow);
-        // let ctx2 = ctx.clone();
-        // ctx.spawn_exit(async move {
-        //     let ctx3 = ctx2.clone();
-        //     let this2 = this.clone();
-        //     let write_function = async move {
-        //         let mut writer = BufWriter::new(writable);
+        drop(borrow);
+        let ctx2 = ctx.clone();
 
-        //         if !is_ended && !is_destroyed {
-        //             loop {
-        //                 tokio::select! {
-        //                     command = command_rx.recv() => {
-        //                          match command {
-        //                             Some(WriteCommand::Write(data, cb, flush)) => {
-        //                                 writer.write_all(&data).await.or_throw(&ctx3)?;
-        //                                 if flush {
-        //                                     writer.flush().await.or_throw(&ctx3)?;
-        //                                 }
+        ctx.spawn_exit(async move {
+            let ctx3 = ctx2.clone();
+            let this2 = this.clone();
+            let write_function = async move {
+                let mut writer = BufWriter::new(writable);
 
-        //                                 if let Some(cb) = cb {
-        //                                     () = cb.call(())?;
-        //                                 }
-        //                             },
-        //                             Some(WriteCommand::End) => {
-        //                                 writer.shutdown().await.or_throw(&ctx3)?;
-        //                                 break;
-        //                             },
-        //                             Some(WriteCommand::Flush) => writer.flush().await.or_throw(&ctx3)?,
-        //                             None => break,
-        //                         }
-        //                     },
-        //                     error = destroy_rx.recv() => {
-        //                         set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
-        //                         break;
-        //                     }
-        //                 }
-        //             }
-        //         }
+                if !is_ended && !is_destroyed {
+                    loop {
+                        tokio::select! {
+                            command = command_rx.recv() => {
+                                 match command {
+                                    Some(WriteCommand::Write(data, cb, flush)) => {
+                                        writer.write_all(&data).await.or_throw(&ctx3)?;
+                                        if flush {
+                                            writer.flush().await.or_throw(&ctx3)?;
+                                        }
 
-        //         drop(writer);
+                                        if let Some(cb) = cb {
+                                            () = cb.call(())?;
+                                        }
+                                    },
+                                    Some(WriteCommand::End) => {
+                                        writer.shutdown().await.or_throw(&ctx3)?;
+                                        break;
+                                    },
+                                    Some(WriteCommand::Flush) => writer.flush().await.or_throw(&ctx3)?,
+                                    None => break,
+                                }
+                            },
+                            error = destroy_rx.recv() => {
+                                set_destroyed_and_error(&mut is_destroyed,  &mut error_value, error);
+                                break;
+                            }
+                        }
+                    }
+                }
 
-        //         if !is_destroyed {
-        //             Self::emit_str(This(this2), &ctx3, "finish", vec![], false)?;
-        //         }
+                drop(writer);
 
-        //         if let Some(error_value) = error_value{
-        //             return Err(ctx3.throw(error_value));
-        //         }
+                if !is_destroyed {
+                    Self::emit_str(This(this2), &ctx3, "finish", vec![], false)?;
+                }
 
-        //         Ok::<_, Error>(())
-        //     }
-        //     .await;
+                if let Some(error_value) = error_value{
+                    return Err(ctx3.throw(error_value));
+                }
 
-        //     let had_error = write_function.emit_error(&ctx2, this.clone())?;
+                Ok::<_, Error>(())
+            }
+            .await;
 
-        //     if emit_close {
-        //         Self::emit_close(this,&ctx2,had_error)?;
-        //     }
+            let had_error = write_function.emit_error(&ctx2, this.clone())?;
 
-        //     Ok::<_, Error>(had_error)
-        // })
+            if emit_close {
+                Self::emit_close(this,&ctx2,had_error)?;
+            }
+
+            Ok::<_, Error>(had_error)
+        })
     }
 }

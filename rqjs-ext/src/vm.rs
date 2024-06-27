@@ -689,70 +689,70 @@ fn set_import_meta(module: &Module<'_>, filepath: &str) -> Result<()> {
     Ok(())
 }
 
-pub trait ErrorExtensions<'js> {
-    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>>;
-}
+// pub trait ErrorExtensions<'js> {
+//     fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>>;
+// }
 
-impl<'js> ErrorExtensions<'js> for Error {
-    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
-        Err::<(), _>(self).catch(ctx).unwrap_err().into_value(ctx)
-    }
-}
+// impl<'js> ErrorExtensions<'js> for Error {
+//     fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
+//         Err::<(), _>(self).catch(ctx).unwrap_err().into_value(ctx)
+//     }
+// }
 
-impl<'js> ErrorExtensions<'js> for CaughtError<'js> {
-    fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
-        Ok(match self {
-            CaughtError::Error(err) => {
-                JsString::from_str(ctx.clone(), &err.to_string())?.into_value()
-            }
-            CaughtError::Exception(ex) => ex.into_value(),
-            CaughtError::Value(val) => val,
-        })
-    }
-}
+// impl<'js> ErrorExtensions<'js> for CaughtError<'js> {
+//     fn into_value(self, ctx: &Ctx<'js>) -> Result<Value<'js>> {
+//         Ok(match self {
+//             CaughtError::Error(err) => {
+//                 JsString::from_str(ctx.clone(), &err.to_string())?.into_value()
+//             }
+//             CaughtError::Exception(ex) => ex.into_value(),
+//             CaughtError::Value(val) => val,
+//         })
+//     }
+// }
 
-pub trait CtxExtension<'js> {
-    fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
-    where
-        F: Future<Output = Result<R>> + 'js,
-        R: 'js;
-}
+// pub trait CtxExtension<'js> {
+//     fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
+//     where
+//         F: Future<Output = Result<R>> + 'js,
+//         R: 'js;
+// }
 
-impl<'js> CtxExtension<'js> for Ctx<'js> {
-    fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
-    where
-        F: Future<Output = Result<R>> + 'js,
-        R: 'js,
-    {
-        todo!();
-        // let ctx = self.clone();
+// impl<'js> CtxExtension<'js> for Ctx<'js> {
+//     fn spawn_exit<F, R>(&self, future: F) -> Result<Receiver<R>>
+//     where
+//         F: Future<Output = Result<R>> + 'js,
+//         R: 'js,
+//     {
+//         todo!();
+//         // let ctx = self.clone();
 
-        // let type_error_ctor: Constructor = ctx.globals().get(PredefinedAtom::TypeError)?;
-        // let type_error: Object = type_error_ctor.construct(())?;
-        // let stack: Option<String> = type_error.get(PredefinedAtom::Stack).ok();
+//         // let type_error_ctor: Constructor = ctx.globals().get(PredefinedAtom::TypeError)?;
+//         // let type_error: Object = type_error_ctor.construct(())?;
+//         // let stack: Option<String> = type_error.get(PredefinedAtom::Stack).ok();
 
-        // let (join_channel_tx, join_channel_rx) = oneshot::channel();
+//         // let (join_channel_tx, join_channel_rx) = oneshot::channel();
 
-        // self.spawn(async move {
-        //     match future.await.catch(&ctx) {
-        //         Ok(res) => {
-        //             //result here dosn't matter if receiver has dropped
-        //             let _ = join_channel_tx.send(res);
-        //         }
-        //         Err(err) => {
-        //             // if let CaughtError::Exception(err) = err {
-        //             //     if err.stack().is_none() {
-        //             //         if let Some(stack) = stack {
-        //             //             err.set(PredefinedAtom::Stack, stack).unwrap();
-        //             //         }
-        //             //     }
-        //             //     Vm::print_error_and_exit(&ctx, CaughtError::Exception(err));
-        //             // } else {
-        //             //     Vm::print_error_and_exit(&ctx, err);
-        //             // }
-        //         }
-        //     }
-        // });
-        // Ok(join_channel_rx)
-    }
-}
+//         // self.spawn(async move {
+//         //     match future.await.catch(&ctx) {
+//         //         Ok(res) => {
+//         //             //result here dosn't matter if receiver has dropped
+//         //             let _ = join_channel_tx.send(res);
+//         //         }
+//         //         Err(err) => {
+//         //             // if let CaughtError::Exception(err) = err {
+//         //             //     if err.stack().is_none() {
+//         //             //         if let Some(stack) = stack {
+//         //             //             err.set(PredefinedAtom::Stack, stack).unwrap();
+//         //             //         }
+//         //             //     }
+//         //             //     Vm::print_error_and_exit(&ctx, CaughtError::Exception(err));
+//         //             // } else {
+//         //             //     Vm::print_error_and_exit(&ctx, err);
+//         //             // }
+//         //         }
+//         //     }
+//         // });
+//         // Ok(join_channel_rx)
+//     }
+// }

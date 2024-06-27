@@ -19,5 +19,6 @@ pub mod timers;
 pub mod util;
 pub mod uuid;
 pub mod xml;
+pub mod child_proess;
 
 pub(crate) mod macros;
