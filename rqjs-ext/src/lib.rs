@@ -134,6 +134,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
     let resolver = (BuiltinResolver::default()
         .with_module("child_process")
         .with_module("os")
+        .with_module("stream")
         .with_module("path")
         .with_module("buffer")
         .with_module("util")
@@ -151,6 +152,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
         BuiltinLoader::default()
             .with_module("inspect", INSPECT_MODULE)
             .with_module("util", UTIL_MODULE)
+            .with_module("stream", modules::stream::STREAM_MODULE)
             .with_module("assert", ASSERT_MODULE)
             .with_module("diagnostics_channel", DIAGNOSTICS_CHANNEL_MODULE),
         ModuleLoader::default()
@@ -168,6 +170,7 @@ pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
 
     let init_global: Vec<fn(&Ctx<'_>) -> Result<()>> = vec![
         modules::buffer::init,
+        modules::events::init,
         modules::exceptions::init,
         modules::encoding::init,
         // modules::console::init,

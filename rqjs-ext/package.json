@@ -6,7 +6,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build:scripts": "esbuild ./deno-scripts/*.ts --bundle --platform=node --format=esm --outdir=./deno-scripts --define:process.env.NODE_DEBUG=false --define:process.stderr=false",
+    "build:script": "esbuild ./ts/* --bundle --format=esm --outdir=./js --external:node:* --external:child_process --external:util --external:fs --external:stream --external:assert --external:events --external:module --external:path  --external:crypto --external:tty",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -21,6 +21,8 @@
     "esbuild": "^0.21.5",
     "object-inspect": "^1.13.2",
     "undici": "^6.19.2",
+    "readable-stream": "4.5.2",
+    "stream-browserify": "3.0.0",
     "util": "^0.12.5"
   }
 }
