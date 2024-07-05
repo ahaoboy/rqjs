@@ -3,10 +3,12 @@
 use std::{
     collections::HashMap,
     io::Result as IoResult,
-    os::fd::FromRawFd,
     process::{Command as StdCommand, Stdio},
     sync::{Arc, RwLock},
 };
+
+#[cfg(not(windows))]
+pub use os::fd::FromRawFd;
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
@@ -39,7 +41,7 @@ use crate::{
         writable::{DefaultWritableStream, WritableStream},
     },
     utils::{object::ObjectExt, result::ResultExt},
-     CtxExtension,
+    CtxExtension,
 };
 
 macro_rules! generate_signal_from_str_fn {
@@ -62,6 +64,7 @@ macro_rules! generate_signal_from_str_fn {
     };
 }
 
+#[cfg(not(windows))]
 generate_signal_from_str_fn!(
     libc::SIGHUP,
     libc::SIGINT,
@@ -105,7 +108,12 @@ impl StdioEnum {
             StdioEnum::Piped => Stdio::piped(),
             StdioEnum::Ignore => Stdio::null(),
             StdioEnum::Inherit => Stdio::inherit(),
+            #[cfg(not(windows))]
             StdioEnum::Fd(id) => unsafe { Stdio::from_raw_fd(*id) },
+            #[cfg(windows)]
+            StdioEnum::Fd(id) => {
+                todo!()
+            }
         }
     }
 }
@@ -123,7 +131,12 @@ impl<'js> ChildProcess<'js> {
                 Some(signal.as_number().unwrap() as i32)
             } else if signal.is_string() {
                 let signal = signal.as_string().unwrap().to_string()?;
-                process_signal_from_str(&signal)
+
+                #[cfg(not(windows))]
+                process_signal_from_str(&signal);
+
+                #[cfg(windows)]
+                todo!()
             } else {
                 None
             }
@@ -200,7 +213,7 @@ impl<'js> ChildProcess<'js> {
                         )
                         .await?;
 
-                        let code = exit_code.unwrap_or_default().into_js(&ctx3)?;
+                        let code = exit_code.unwrap_or_default().into_js(&ctx3.clone())?;
                         let signal;
                         #[cfg(unix)]
                         {
@@ -212,7 +225,7 @@ impl<'js> ChildProcess<'js> {
                         }
                         #[cfg(not(unix))]
                         {
-                            signal = Undefined.into_value(&ctx3);
+                            signal = Undefined.into_value(ctx3.clone());
                         }
 
                         ChildProcess::emit_str(
@@ -253,7 +266,7 @@ impl<'js> ChildProcess<'js> {
 
                     Ok(())
                 })?;
-            },
+            }
             Err(err) => {
                 let ctx3 = ctx.clone();
 
@@ -274,7 +287,7 @@ impl<'js> ChildProcess<'js> {
                     )?;
                     Ok(())
                 })?;
-            },
+            }
         }
         Ok(instance)
     }
@@ -406,11 +419,14 @@ fn spawn<'js>(
     let mut stderr = StdioEnum::Piped;
 
     if let Some(opts) = opts {
-        if let Some(gid) = opts.get_optional("gid")? {
-            command.gid(gid);
-        }
-        if let Some(uid) = opts.get_optional("uid")? {
-            command.gid(uid);
+        #[cfg(not(windows))]
+        {
+            if let Some(gid) = opts.get_optional("gid")? {
+                command.gid(gid);
+            }
+            if let Some(uid) = opts.get_optional("uid")? {
+                command.gid(uid);
+            }
         }
 
         if let Some(cwd) = opts.get_optional::<_, String>("cwd")? {
@@ -449,7 +465,7 @@ fn spawn<'js>(
                         2 => stderr = stdio,
                         _ => {
                             break;
-                        },
+                        }
                     }
                 }
             }

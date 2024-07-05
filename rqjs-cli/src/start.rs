@@ -44,9 +44,12 @@ pub async fn start(args: Args) {
               Err(e) => match e.into_value(&ctx) {
                   Ok(v) => {
                       let obj = v.as_object().unwrap();
-                      let message = obj.get::<_, String>("message").unwrap();
-                      let stack = obj.get::<_, String>("stack").unwrap();
+
+                      if let (Ok(message),Ok(stack)) = (obj.get::<_, String>("message"),obj.get::<_, String>("stack")){
                         println!("{}",format!("{}\n{}", message, stack).red());
+                      }else {
+                            println!("{:?}", obj)
+                        }
                   }
                   Err(v) => {
                       println!("{:?}", v);
@@ -78,9 +81,15 @@ pub async fn start(args: Args) {
                 Err(e) => match e.into_value(&ctx) {
                     Ok(v) => {
                         let obj = v.as_object().unwrap();
-                        let message = obj.get::<_, String>("message").unwrap();
-                        let stack = obj.get::<_, String>("stack").unwrap();
-                        println!("{}", format!("{}\n{}", message, stack).red());
+
+                        if let (Ok(message), Ok(stack)) = (
+                            obj.get::<_, String>("message"),
+                            obj.get::<_, String>("stack"),
+                        ) {
+                            println!("{}", format!("{}\n{}", message, stack).red());
+                        } else {
+                            println!("{:?}", obj)
+                        }
                         exit(1);
                     }
                     Err(v) => {

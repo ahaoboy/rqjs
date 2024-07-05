@@ -14,10 +14,9 @@ use rquickjs::{
 
 use chrono::Utc;
 
-use crate::{ modules::module::export_default, TIME_ORIGIN};
+use crate::{modules::module::export_default, TIME_ORIGIN};
 
 use crate::VERSION;
-
 
 fn cwd() -> String {
     env::current_dir().unwrap().to_string_lossy().to_string()
@@ -82,9 +81,27 @@ fn env_proxy_setter<'js>(
     Ok(true)
 }
 
+fn print(s: String) {
+    print!("{}", s);
+}
+fn set_raw_mode(b:bool) {
+
+}
 pub fn init(ctx: &Ctx<'_>) -> Result<()> {
     let globals = ctx.globals();
     let process = Object::new(ctx.clone())?;
+
+    let stdin: Object = Object::new(ctx.clone())?;
+
+    stdin.set("setRawMode", Func::from(set_raw_mode))?;
+
+    let stdout = Object::new(ctx.clone())?;
+    stdout.set("write", Func::from(print))?;
+    stdout.set("columns", 40)?;
+    stdout.set("rows",   40)?;
+    process.set("stdout", stdout)?;
+    process.set("stdin", stdin)?;
+
     let process_versions = Object::new(ctx.clone())?;
     process_versions.set("llrt", VERSION)?;
 
@@ -145,6 +162,8 @@ impl ModuleDef for ProcessModule {
         declare.declare("version")?;
         declare.declare("versions")?;
         declare.declare("exit")?;
+        declare.declare("stdout")?;
+        declare.declare("stdin")?;
 
         declare.declare("default")?;
         Ok(())
@@ -167,4 +186,3 @@ impl ModuleDef for ProcessModule {
         Ok(())
     }
 }
-
