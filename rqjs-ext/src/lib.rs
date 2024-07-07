@@ -2,13 +2,19 @@
 #![allow(clippy::inherent_to_string)]
 #![cfg_attr(rust_nightly, feature(portable_simd))]
 
-use std::{default, future::Future, process::exit, sync::atomic::AtomicUsize};
+use std::{future::Future, process::exit, sync::atomic::AtomicUsize};
 
 use colored::*;
 use modules::{
-    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, events::Emitter, inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule
+    assert::ASSERT_MODULE, diagnostics_channel::DIAGNOSTICS_CHANNEL_MODULE, events::Emitter,
+    inspect::INSPECT_MODULE, node_util::UTIL_MODULE, xml::XmlModule,
 };
-use rquickjs::{atom::PredefinedAtom, function::{Constructor, This}, loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, NativeLoader, Resolver, ScriptLoader}, AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Class, Ctx, Error, Object, Result, String as JsString, Value
+use rquickjs::{
+    atom::PredefinedAtom,
+    function::{Constructor, This},
+    loader::{BuiltinLoader, BuiltinResolver, ModuleLoader, Resolver},
+    AsyncContext, AsyncRuntime, CatchResultExt, CaughtError, Class, Ctx, Error, Object,
+    Result, String as JsString, Value,
 };
 
 #[macro_use]
@@ -129,8 +135,8 @@ impl<'js, T> EmitError<'js> for Result<T> {
     }
 }
 
-pub struct ModuleResolver{
-  builtin_resolver:BuiltinResolver
+pub struct ModuleResolver {
+    builtin_resolver: BuiltinResolver,
 }
 
 impl ModuleResolver {
@@ -150,25 +156,24 @@ impl Resolver for ModuleResolver {
 }
 
 pub async fn install_ext_async(rt: &AsyncRuntime, ctx: &AsyncContext) {
-
-    let r = ModuleResolver{
+    let r = ModuleResolver {
         builtin_resolver: BuiltinResolver::default()
-        .with_module("child_process")
-        .with_module("os")
-        .with_module("tty")
-        .with_module("stream")
-        .with_module("path")
-        .with_module("buffer")
-        .with_module("util")
-        .with_module("assert")
-        .with_module("uuid")
-        .with_module("xml")
-        .with_module("process")
-        .with_module("fs")
-        .with_module("inspect")
-        .with_module("perf_hooks")
-        .with_module("diagnostics_channel")
-        .with_module("fs/promises"),
+            .with_module("child_process")
+            .with_module("os")
+            .with_module("tty")
+            .with_module("stream")
+            .with_module("path")
+            .with_module("buffer")
+            .with_module("util")
+            .with_module("assert")
+            .with_module("uuid")
+            .with_module("xml")
+            .with_module("process")
+            .with_module("fs")
+            .with_module("inspect")
+            .with_module("perf_hooks")
+            .with_module("diagnostics_channel")
+            .with_module("fs/promises"),
     };
 
     let resolver = (r,);

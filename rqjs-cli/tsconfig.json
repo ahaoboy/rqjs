@@ -22,6 +22,6 @@
     "sourceMap": false,
     "declaration": true
   },
-  "include": ["${configDir}/ts"],
-  "exclude": ["${configDir}/test"]
+  "include": ["**/ts"],
+  "exclude": ["**/test"]
 }

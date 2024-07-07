@@ -9,7 +9,7 @@ async fn main() {
 
 #[cfg(test)]
 mod test {
-    use std::{fs::read_dir, path::PathBuf, str::FromStr};
+    use std::{path::PathBuf, str::FromStr};
 
     use rqjs_cli::start::{self, Args};
 

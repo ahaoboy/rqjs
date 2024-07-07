@@ -1,30 +1,30 @@
-import util from 'util'
+import util from "util"
 
 // Port from node core lib/internal/errors.js
 class ERR_INVALID_ARG_TYPE extends TypeError {
   constructor(message, actual) {
-    super();
+    super()
 
     if (actual == null) {
-      message += `. Received ${actual}`;
-    } else if (typeof actual === 'function' && actual.name) {
-      message += `. Received function ${actual.name}`;
-    } else if (typeof actual === 'object') {
-      if (actual.constructor && actual.constructor.name) {
-        message += `. Received an instance of ${actual.constructor.name}`;
+      message += `. Received ${actual}`
+    } else if (typeof actual === "function" && actual.name) {
+      message += `. Received function ${actual.name}`
+    } else if (typeof actual === "object") {
+      if (actual.constructor?.name) {
+        message += `. Received an instance of ${actual.constructor.name}`
       } else {
-        const inspected = util.inspect(actual, { depth: -1 });
-        message += `. Received ${inspected}`;
+        const inspected = util.inspect(actual, { depth: -1 })
+        message += `. Received ${inspected}`
       }
     } else {
-      let inspected = util.inspect(actual, { colors: false });
+      let inspected = util.inspect(actual, { colors: false })
       if (inspected.length > 25) {
-        inspected = `${inspected.slice(0, 25)}...`;
+        inspected = `${inspected.slice(0, 25)}...`
       }
-      message += `. Received type ${typeof actual} (${inspected})`;
+      message += `. Received type ${typeof actual} (${inspected})`
     }
 
-    this.code = this.constructor.name;
+    this.code = this.constructor.name
 
     Object.defineProperties(this, {
       message: {
@@ -35,52 +35,55 @@ class ERR_INVALID_ARG_TYPE extends TypeError {
       },
       toString: {
         value() {
-          return `${this.name} [${this.code}]: ${this.message}`;
+          return `${this.name} [${this.code}]: ${this.message}`
         },
         enumerable: false,
         writable: true,
         configurable: true,
       },
-    });
+    })
   }
 }
 
 class ActiveChannel {
   subscribe(subscription) {
-    if (typeof subscription !== 'function') {
-      throw new ERR_INVALID_ARG_TYPE('The "subscription" argument must be of type function', subscription);
+    if (typeof subscription !== "function") {
+      throw new ERR_INVALID_ARG_TYPE(
+        'The "subscription" argument must be of type function',
+        subscription,
+      )
     }
-    this._subscribers.push(subscription);
+    this._subscribers.push(subscription)
   }
 
   unsubscribe(subscription) {
-    const index = this._subscribers.indexOf(subscription);
-    if (index === -1) return false;
+    const index = this._subscribers.indexOf(subscription)
+    if (index === -1) return false
 
-    this._subscribers.splice(index, 1);
+    this._subscribers.splice(index, 1)
 
     // When there are no more active subscribers, restore to fast prototype.
     if (!this._subscribers.length) {
       // eslint-disable-next-line no-use-before-define
-      Object.setPrototypeOf(this, Channel.prototype);
+      Object.setPrototypeOf(this, Channel.prototype)
     }
 
-    return true;
+    return true
   }
 
   get hasSubscribers() {
-    return true;
+    return true
   }
 
   publish(data) {
     for (let i = 0; i < this._subscribers.length; i++) {
       try {
-        const onMessage = this._subscribers[i];
-        onMessage(data, this.name);
+        const onMessage = this._subscribers[i]
+        onMessage(data, this.name)
       } catch (err) {
         process.nextTick(() => {
-          throw err;
-        });
+          throw err
+        })
       }
     }
   }
@@ -88,74 +91,73 @@ class ActiveChannel {
 
 class Channel {
   constructor(name) {
-    this._subscribers = undefined;
-    this.name = name;
+    this._subscribers = undefined
+    this.name = name
   }
 
   static [Symbol.hasInstance](instance) {
-    const prototype = Object.getPrototypeOf(instance);
-    return prototype === Channel.prototype ||
-      prototype === ActiveChannel.prototype;
+    const prototype = Object.getPrototypeOf(instance)
+    return (
+      prototype === Channel.prototype || prototype === ActiveChannel.prototype
+    )
   }
 
   subscribe(subscription) {
-    Object.setPrototypeOf(this, ActiveChannel.prototype);
-    this._subscribers = [];
-    this.subscribe(subscription);
+    Object.setPrototypeOf(this, ActiveChannel.prototype)
+    this._subscribers = []
+    this.subscribe(subscription)
   }
 
   unsubscribe() {
-    return false;
+    return false
   }
 
   get hasSubscribers() {
-    return false;
+    return false
   }
 
-  publish() { }
+  publish() {}
 }
 
-const channels = {};
+const channels = {}
 
 function channel(name) {
-  const channel = channels[name];
-  if (channel) return channel;
+  const channel = channels[name]
+  if (channel) return channel
 
-  if (typeof name !== 'string' && typeof name !== 'symbol') {
-    throw new ERR_INVALID_ARG_TYPE('The "channel" argument must be one of type string or symbol', name);
+  if (typeof name !== "string" && typeof name !== "symbol") {
+    throw new ERR_INVALID_ARG_TYPE(
+      'The "channel" argument must be one of type string or symbol',
+      name,
+    )
   }
 
-  return channels[name] = new Channel(name);
+  return (channels[name] = new Channel(name))
 }
 
 function hasSubscribers(name) {
-  const channel = channels[name];
+  const channel = channels[name]
   if (!channel) {
-    return false;
+    return false
   }
 
-  return channel.hasSubscribers;
+  return channel.hasSubscribers
 }
 
 function deleteChannel(name) {
   if (channels[name]) {
-    channels[name] = null;
-    return true;
+    channels[name] = null
+    return true
   }
 
-  return false;
+  return false
 }
 
-export {
-  channel,
-  hasSubscribers,
-  Channel,
-  deleteChannel
-};
+export { channel, hasSubscribers, Channel, deleteChannel }
 
 export default {
   channel,
   hasSubscribers,
   Channel,
-  deleteChannel
-};
+  deleteChannel,
+}

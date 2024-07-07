@@ -1,22 +1,20 @@
-use std::env;
+use std::{io::Write};
 
-use crate::modules::module::export_default;
-use once_cell::sync::Lazy;
 use rquickjs::{
-    atom::PredefinedAtom,
-    function::{Constructor, Opt},
-    Class, Object, Value,
+    Value,
 };
 use rquickjs::{
-    module::{Declarations, Exports, ModuleDef},
-    prelude::Func,
-    AsyncContext, Ctx, Function, Result,
+    Ctx, Function, Result,
 };
 
 pub struct ConsoleModule;
-fn print(s: String) {
+
+pub fn print(s: String) {
     print!("{s}");
+    let mut stdout = std::io::stdout();
+    stdout.flush().unwrap();
 }
+
 pub fn init(ctx: &Ctx<'_>) -> Result<()> {
     let core = include_str!("../../js/00_console.js");
     let global = ctx.globals();

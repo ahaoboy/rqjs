@@ -1,7 +1,13 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-use std::{collections::HashMap, env, sync::atomic::Ordering};
+use std::{
+    collections::HashMap,
+    env,
+    io::Write,
+    sync::{atomic::Ordering, Arc, Mutex},
+};
 
+use crossterm::terminal::{self, disable_raw_mode, enable_raw_mode};
 use rquickjs::{
     atom::PredefinedAtom,
     convert::Coerced,
@@ -14,9 +20,11 @@ use rquickjs::{
 
 use chrono::Utc;
 
-use crate::{modules::module::export_default, TIME_ORIGIN};
+use crate::{modules::module::export_default, CtxExtension, TIME_ORIGIN};
 
 use crate::VERSION;
+
+use super::console_deno;
 
 fn cwd() -> String {
     env::current_dir().unwrap().to_string_lossy().to_string()
@@ -81,24 +89,133 @@ fn env_proxy_setter<'js>(
     Ok(true)
 }
 
-fn print(s: String) {
-    print!("{}", s);
+fn set_raw_mode(b: bool) -> Result<()> {
+    if b {
+        enable_raw_mode().unwrap();
+    } else {
+        disable_raw_mode().unwrap();
+    }
+    Ok(())
 }
-fn set_raw_mode(b:bool) {
 
+fn create_stdout<'a>(ctx: &Ctx<'a>) -> Result<Object<'a>> {
+    let stdout = Object::new(ctx.clone())?;
+    stdout.set("write", Func::from(console_deno::print))?;
+    let (w, h) = terminal::size().unwrap();
+    stdout.set("columns", w)?;
+    stdout.set("rows", h)?;
+
+    Ok(stdout)
 }
+
+fn stdin_add_listener<'js>(ctx: Ctx<'js>, event: Value<'js>, listener: Function<'js>) {
+    use crossterm::event::KeyEventKind::Release;
+    use crossterm::event::{Event, EventStream, KeyCode};
+    use futures::{future::FutureExt, select, StreamExt};
+
+    let event_name = event.into_string().unwrap().to_string().unwrap();
+    match event_name.as_str() {
+        "data" => {
+            ctx.spawn_exit(async move {
+                let mut reader = EventStream::new();
+                let   v = Arc::new ( Mutex::new(vec![]));
+                loop {
+                    let mut event = reader.next().fuse();
+                    select! {
+                        maybe_event = event => {
+                            match maybe_event {
+                                Some(Ok(event)) => {
+                                  match event{
+                                    Event::Key(k)=>{
+                                      if k.kind ==  Release{
+                                        match k.code {
+                                            KeyCode::Char(c) =>{
+                                              let mut lock = v.lock().unwrap();
+                                              lock.push(c);
+
+                                              let mut stdout = std::io::stdout();
+                                              let mut locked = stdout.lock();
+                                              locked.write(c.to_string().as_bytes()).unwrap();
+                                                stdout.flush().unwrap();
+                                            }
+                                            ,
+                                            KeyCode::Enter =>{
+                                                let mut lock = v.lock().unwrap();
+                                                listener.call::<(String, ), ()>((lock.iter().map(|i| i.to_string()).collect(),)).unwrap();
+                                                lock.clear();
+                                            },
+                                            _=>{
+                                               }
+                                        }
+
+
+                                      }
+                                    },
+                                    _=>{
+                                    }
+                                  }
+                                }
+                                Some(Err(e)) => println!("Error: {:?}\r", e),
+                                None => break,
+                            }
+                        }
+                    };
+                }
+
+                Ok(())
+            })
+            .unwrap();
+        }
+        "readable" => {
+            ctx.spawn_exit(async move {
+        let mut reader = EventStream::new();
+        loop {
+            let mut event = reader.next().fuse();
+            select! {
+                maybe_event = event => {
+                    match maybe_event {
+                        Some(Ok(event)) => {
+                          match event{
+                            Event::Key(k)=>{
+                              if k.kind ==  Release{
+                                println!("{:?}",k);
+                                if let KeyCode::Char(c) = k.code{
+                                  listener.call::<(String, ), ()>((c.to_string(),)).unwrap();
+                                }
+                              }
+                            },
+                            _=>{
+                            }
+                          }
+                        }
+                        Some(Err(e)) => println!("Error: {:?}\r", e),
+                        None => break,
+                    }
+                }
+            };
+        }
+
+        Ok(())
+    })
+    .unwrap();
+        }
+        _ => {}
+    }
+}
+
+fn create_stdin<'a>(ctx: &Ctx<'a>) -> Result<Object<'a>> {
+    let stdin: Object = Object::new(ctx.clone())?;
+    stdin.set("setRawMode", Func::from(set_raw_mode))?;
+    stdin.set("addListener", Func::from(stdin_add_listener))?;
+    Ok(stdin)
+}
+
 pub fn init(ctx: &Ctx<'_>) -> Result<()> {
     let globals = ctx.globals();
     let process = Object::new(ctx.clone())?;
 
-    let stdin: Object = Object::new(ctx.clone())?;
-
-    stdin.set("setRawMode", Func::from(set_raw_mode))?;
-
-    let stdout = Object::new(ctx.clone())?;
-    stdout.set("write", Func::from(print))?;
-    stdout.set("columns", 40)?;
-    stdout.set("rows",   40)?;
+    let stdout = create_stdout(&ctx.clone())?;
+    let stdin = create_stdin(&ctx.clone())?;
     process.set("stdout", stdout)?;
     process.set("stdin", stdin)?;
 

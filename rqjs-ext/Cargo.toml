@@ -46,7 +46,7 @@ hyper-rustls = { version = "0.27.2", default-features = false, features = [
   "ring",
 ] }
 chrono = { version = "0.4.38", default-features = false, features = ["std"] }
-quick-xml = "0.34"
+quick-xml = "0.35.0"
 crc32c = { version = "0.6.8" }
 crc32fast = "1.4.2"
 # md-5 = { version = "0.10.6", features = ["asm"] }
@@ -55,3 +55,9 @@ log = { version = "0.4" }
 colored = "2.1"
 libc="*"
 atty = "0.2"
+futures = "0.3"
+futures-timer = "3.0"
+
+[dependencies.crossterm]
+version = "0.27.0"
+features = ["event-stream"]

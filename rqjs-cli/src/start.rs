@@ -36,10 +36,12 @@ pub async fn start(args: Args) {
 
            match r{
                 Ok(v) => {
-                  let g = ctx.globals();
-                  let console: Object = g.get("console").unwrap();
-                  let log: Function = console.get("log").unwrap();
-                  log.call::<(Value<'_>,), ()>((v,)).unwrap();
+                      if !v.is_undefined() {
+                        let g = ctx.globals();
+                        let console: Object = g.get("console").unwrap();
+                        let log: Function = console.get("log").unwrap();
+                        log.call::<(Value<'_>,), ()>((v,)).unwrap();
+                    }
               }
               Err(e) => match e.into_value(&ctx) {
                   Ok(v) => {
@@ -76,7 +78,9 @@ pub async fn start(args: Args) {
                     let g = ctx.globals();
                     let console: Object = g.get("console").unwrap();
                     let log: Function = console.get("log").unwrap();
-                    log.call::<(Value<'_>,), ()>((v,)).unwrap();
+                    if !v.is_undefined() {
+                        log.call::<(Value<'_>,), ()>((v,)).unwrap();
+                    }
                 }
                 Err(e) => match e.into_value(&ctx) {
                     Ok(v) => {

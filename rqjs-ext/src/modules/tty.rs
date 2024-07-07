@@ -3,9 +3,8 @@
 use rquickjs::{
     function::Func,
     module::{Declarations, Exports, ModuleDef},
-    Ctx, Object, Result,
+    Ctx, Result,
 };
-use std::{env, process::Stdio};
 
 use crate::modules::module::export_default;
 

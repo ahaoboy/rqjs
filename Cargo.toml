@@ -1,5 +1,5 @@
 [workspace]
-members = ["rqjs-cli", "rqjs-ext"]
+members = ["rqjs-cli", "rqjs-ext" ]
 resolver = "2"
 
 # Config for 'cargo dist'

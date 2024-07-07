@@ -4,7 +4,6 @@ use std::{
     cmp::min,
     collections::{HashMap, HashSet},
     ffi::CStr,
-    future::Future,
     str::FromStr,
     sync::{Arc, Mutex},
 };
@@ -14,8 +13,7 @@ use std::{
 // use chrono::Utc;
 // use ring::rand::SecureRandom;
 use rquickjs::{
-    atom::PredefinedAtom, context::EvalOptions, function::Opt, prelude::Func, qjs, CatchResultExt,
-    CaughtError, Ctx, Error, Function, IntoJs, Module, Object, Promise, Result, String as JsString,
+    atom::PredefinedAtom, context::EvalOptions, function::Opt, prelude::Func, qjs, Ctx, Function, IntoJs, Module, Object, Promise, Result,
     Value,
 };
 // use tokio::sync::oneshot::{self, Receiver};
@@ -465,7 +463,6 @@ struct ExportArgs<'js>(Ctx<'js>, Object<'js>, Value<'js>, Value<'js>);
 //     }
 // }
 
-use tokio::sync::oneshot::Receiver;
 
 use crate::{
     json::{parse::json_parse, stringify::json_stringify_replacer_space},

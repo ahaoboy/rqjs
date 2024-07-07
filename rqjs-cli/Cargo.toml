@@ -8,10 +8,18 @@ authors = ["ahaoboy"]
 repository = "https://github.com/ahaoboy/rqjs"
 homepage = "https://github.com/ahaoboy/rqjs"
 
+[[bin]]
+name = "rqjs"
+path="./src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-rquickjs = { version = "0.6.2", features = ["full-async", "bindgen","loader", "dyn-load"] }
+rquickjs = { version = "0.6.2", features = [
+  "full-async",
+  "bindgen",
+  "loader",
+  "dyn-load",
+] }
 ctrlc = "3.4.4"
 tokio = { version = "1", features = ["full"] }
 rqjs-ext = { version = "0.1.3", path = "../rqjs-ext" }

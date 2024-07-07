@@ -6,24 +6,11 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build:script": "esbuild ./script/* --bundle --format=esm --outdir=./js --define:navigator=false --define:process.env.NODE_DEBUG=false --define:process.stderr=false",
+    "build": "esbuild ./script/* --bundle --format=esm --outdir=./js --define:navigator=false --define:process.env.NODE_DEBUG=false --define:process.stderr=false",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@deno-ext/console": "^0.1.0",
-    "@inquirer/prompts": "^5.0.6",
-    "@types/node": "^20.14.5",
-    "assert": "^2.1.0",
-    "deno-console": "^0.1.3",
-    "diagnostics_channel": "^1.1.0",
-    "esbuild": "^0.21.5",
-    "object-inspect": "^1.13.2",
-    "readable-stream": "4.5.2",
-    "stream-browserify": "3.0.0",
-    "undici": "^6.19.2",
-    "util": "^0.12.5"
-  }
+  "devDependencies": {}
 }

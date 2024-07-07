@@ -1,3 +1,3 @@
-import inspect from 'object-inspect'
+import inspect from "object-inspect"
 
 export { inspect }
