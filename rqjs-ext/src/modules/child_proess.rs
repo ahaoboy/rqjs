@@ -8,7 +8,7 @@ use std::{
 };
 
 #[cfg(not(windows))]
-pub use os::fd::FromRawFd;
+pub use std::os::fd::FromRawFd;
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
@@ -132,11 +132,12 @@ impl<'js> ChildProcess<'js> {
             } else if signal.is_string() {
                 let signal = signal.as_string().unwrap().to_string()?;
 
-                #[cfg(not(windows))]
-                process_signal_from_str(&signal);
+                    #[cfg(not(windows))]
+                    let n = process_signal_from_str(&signal);
 
-                #[cfg(windows)]
-                todo!()
+                    #[cfg(windows)]
+                    let n = todo!();
+                    n
             } else {
                 None
             }
