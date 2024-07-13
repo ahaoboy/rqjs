@@ -112,56 +112,23 @@ fn stdin_add_listener<'js>(ctx: Ctx<'js>, event: Value<'js>, listener: Function<
     use crossterm::event::KeyEventKind::Release;
     use crossterm::event::{Event, EventStream, KeyCode};
     use futures::{future::FutureExt, select, StreamExt};
+    use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader};
 
     let event_name = event.into_string().unwrap().to_string().unwrap();
     match event_name.as_str() {
         "data" => {
             ctx.spawn_exit(async move {
                 let mut reader = EventStream::new();
-                let   v = Arc::new ( Mutex::new(vec![]));
+                let stdin = io::stdin();
+                let mut reader = BufReader::new(stdin);
                 loop {
-                    let mut event = reader.next().fuse();
-                    select! {
-                        maybe_event = event => {
-                            match maybe_event {
-                                Some(Ok(event)) => {
-                                  match event{
-                                    Event::Key(k)=>{
-                                      if k.kind ==  Release{
-                                        match k.code {
-                                            KeyCode::Char(c) =>{
-                                              let mut lock = v.lock().unwrap();
-                                              lock.push(c);
-
-                                              let mut stdout = std::io::stdout();
-                                              let mut locked = stdout.lock();
-                                              locked.write(c.to_string().as_bytes()).unwrap();
-                                                stdout.flush().unwrap();
-                                            }
-                                            ,
-                                            KeyCode::Enter =>{
-                                                let mut lock = v.lock().unwrap();
-                                                listener.call::<(String, ), ()>((lock.iter().map(|i| i.to_string()).collect(),)).unwrap();
-                                                lock.clear();
-                                            },
-                                            _=>{
-                                               }
-                                        }
-
-
-                                      }
-                                    },
-                                    _=>{
-                                    }
-                                  }
-                                }
-                                Some(Err(e)) => println!("Error: {:?}\r", e),
-                                None => break,
-                            }
-                        }
-                    };
+                    let mut input: String = String::new();
+                    reader
+                        .read_line(&mut input)
+                        .await
+                        .expect("Failed to read line");
+                    listener.call::<(String,), ()>((input,)).unwrap();
                 }
-
                 Ok(())
             })
             .unwrap();
